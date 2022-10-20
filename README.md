@@ -14,3 +14,7 @@ Aplikace neuronových sítí 2022
   - Povinná část: Softmax, funkční klasifikace, validační skóre > 40 %
   - Nepovinná část: SVM
   - **deadline: 8.11.2022**
+
+### 2. Zpětná propagace
+  - notebook: [backpropagation.ipynb](assignments/backpropagation.ipynb)
+  - **deadline: 15.11.2022**
