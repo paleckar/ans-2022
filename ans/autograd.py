@@ -138,7 +138,7 @@ class Variable:
             except StopIteration:
                 node_name = default_name
             if node.data.ndim > 0:  # tensor
-                node_label = f"{node_name} {node.data.shape}"
+                node_label = f"{node_name} {tuple(node.data.shape)}"
                 if show_data:
                     node_label += f" | data: {node.data} | grad: {node.grad}"
             else:  # scalar
