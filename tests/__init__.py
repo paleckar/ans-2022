@@ -1,5 +1,7 @@
 import ast
 import inspect
+import re
+import textwrap
 from typing import Any, Callable, Optional, Union
 import unittest
 
@@ -42,12 +44,21 @@ class ANSTestCase(unittest.TestCase):
     def inspect_function_dependencies(func: Callable) -> list[str]:
         return [
             ANSTestCase._ast_node_name(node.func)
-            for node in ast.walk(ast.parse(inspect.getsource(func)))
+            for node in ast.walk(ast.parse(ANSTestCase.get_source(func)))
             if isinstance(node, ast.Call)
         ]
 
+    @staticmethod
+    def get_source(object: Any) -> str:
+        source = inspect.getsource(object)
+        while re.match('\s+', source):
+            source = textwrap.dedent(source)
+        return source
+
     def assertNotCalling(self, func: Callable, names: list[str]) -> None:
-        for node in ast.walk(ast.parse(inspect.getsource(func))):
+        source = self.get_source(func)
+
+        for node in ast.walk(ast.parse(source)):
             if isinstance(node, ast.Call):  # check not directly calling forbidden name
                 call_name = self._ast_node_name(node.func)
             elif isinstance(node, ast.Assign):  # check not assigning alias to forbidden name

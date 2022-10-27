@@ -142,9 +142,9 @@ class Variable:
                 if show_data:
                     node_label += f" | data: {node.data} | grad: {node.grad}"
             else:  # scalar
-                node_label = f"{node_name} = {node.data.item()}"
-                if node.grad is not None:
-                    node_label += f" | grad = {node.grad.item()}"
+                node_label = f"{node_name} = {node.data.item():.3f}"
+                if show_data and node.grad is not None:
+                    node_label += f" | grad = {node.grad.item():.3f}"
             return node_uid, node_label
 
         def get_func_info(node:'Variable') -> tuple[str, str]:
@@ -160,13 +160,14 @@ class Variable:
                 func_label: Text caption of the node to be displayed as label in some graphviz.Digraph
             """
             func_uid = str(id(node)) + '.grad_fn'
-            if hasattr(node.grad_fn, 'func'):
-                func_label = node.grad_fn.func.__qualname__.removesuffix('.backward')
+            if hasattr(node.grad_fn, 'name'):
+                func_label = node.grad_fn.name.removesuffix('.backward')
             else:
                 func_label = re.search('__(\w+)__', node.grad_fn.__qualname__).group(1)
             return func_uid, func_label
 
-        torch.set_printoptions(profile='short', threshold=6, edgeitems=1)
+        if show_data:
+            torch.set_printoptions(profile='short', threshold=6, edgeitems=1)
         dot = graphviz.Digraph(graph_attr={'rankdir': 'LR'})
 
         ########################################
@@ -178,3 +179,76 @@ class Variable:
         ########################################
 
         return dot
+
+
+def numeric_gradient(
+        func: Callable[[torch.Tensor], torch.Tensor],
+        input: torch.Tensor,
+        eps: Optional[float] = None
+) -> torch.Tensor:
+    if eps is None:
+        eps = max(1e-6, 0.01 * input.std())
+    if not torch.is_floating_point(input):
+        raise TypeError(input.dtype)
+    input = input.contiguous()
+    flat = input.view(-1)  # shares memory
+    grad = torch.zeros_like(flat)
+    for i in range(flat.shape[0]):
+        inp_i = flat[i].item()  # must be deep-copied, since `flat[i]` returns a view to the i-th element
+        flat[i] = inp_i + eps
+        pos = func(input)
+        flat[i] = inp_i - eps
+        neg = func(input)
+        flat[i] = inp_i  # restore
+        grad[i] = torch.sum((pos - neg)) / (2. * eps)
+    return grad.reshape(input.shape)
+
+
+def gradcheck(
+        func: Callable[[Any, ...], Variable],
+        inputs: tuple[Union[torch.Tensor, Variable], ...],
+        params: Optional[dict[str, Any]] = None,
+        eps: Optional[float] = None,
+        rtol: float = 1e-3,
+        atol: float = 1e-5,
+        verbose: bool = True
+) -> bool:
+    if params is None:
+        params = {}
+
+    # Analytic gradients
+    output = func(*inputs, **params)
+    for input in inputs:
+        input.grad = None
+    output.backprop()
+    grads_ana = [i.grad for i in inputs if isinstance(i, Variable)]
+
+    # Numeric gradients
+    ok = True
+    for i, input in enumerate(inputs):
+        if not isinstance(input, Variable):
+            continue
+        grad_num = numeric_gradient(lambda _: func(*inputs, **params).data, input.data, eps=eps)
+        abs_err = torch.abs(grads_ana[i] - grad_num)
+        rel_err = abs_err / torch.abs(grad_num)
+        allowed = atol + rtol * torch.abs(grad_num)
+        passes = torch.all(abs_err < allowed)  # torch.allclose
+        ok = ok and passes.item()
+        if verbose:
+            input_name = input.name if input.name is not None else f"input{i}"
+            if passes:
+                print(f"d{input_name} ok: rel_err={rel_err.max().item():.3e}, abs_err={abs_err.max().item():.3e}")
+            else:
+                torch.set_printoptions(threshold=40, linewidth=160, sci_mode=False)
+                print(f"\033[31md{input_name} FAIL: "  # begin red color
+                      f"rel_err={rel_err.max().item():.3e}, abs_err={abs_err.max().item():.3e}\n")
+                print('Analytic gradient: ')
+                print(grads_ana[i], '\n')
+                print('Numeric gradient: ')
+                print(grad_num, '\n')
+                print('Relative error: ')
+                print(rel_err)
+                print('\033[30m')  # end red color
+                torch.set_printoptions(profile='default')
+
+    return ok

@@ -18,3 +18,7 @@ Aplikace neuronových sítí 2022
 ### 2. Zpětná propagace
   - notebook: [backpropagation.ipynb](assignments/backpropagation.ipynb)
   - **deadline: 15.11.2022**
+
+### 3. Modularizace základních operací
+  - notebook [neural-library.ipynb](assignments/neural-library.ipynb)
+  - **deadline: 22.11.2022**
