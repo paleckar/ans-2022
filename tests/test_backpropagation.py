@@ -18,14 +18,14 @@ class TestAdd(ANSTestCase):
             # forward pass
             x_var, y_var, z_var = example_1(shape, op=self.operation)
             z = self.forward(x_var.data, y_var.data)
-            torch.testing.assert_allclose(z_var.data, z, rtol=1e-3, atol=1e-4)
+            self.assertTensorsClose(z_var.data, z)
 
             # backward pass
             dz = torch.randn(shape)
             z.backward(gradient=dz)
             dx, dy = z_var.grad_fn(dz)
-            torch.testing.assert_allclose(dx, x_var.data.grad, rtol=1e-3, atol=1e-4)
-            torch.testing.assert_allclose(dy, y_var.data.grad, rtol=1e-3, atol=1e-4)
+            self.assertTensorsClose(dx, x_var.data.grad)
+            self.assertTensorsClose(dy, y_var.data.grad)
 
 
 class TestSub(TestAdd):
@@ -59,13 +59,13 @@ class TestPow(ANSTestCase):
                 y = x ** power
                 x_var = ans.autograd.Variable(x)
                 y_var = x_var ** power
-                torch.testing.assert_allclose(y_var.data, y, rtol=1e-3, atol=1e-4)
+                self.assertTensorsClose(y_var.data, y)
 
                 # backward pass
                 dy = torch.randn(shape)
                 y.backward(dy)
                 dx, = y_var.grad_fn(dy)
-                torch.testing.assert_allclose(dx, x.grad, rtol=1e-3, atol=1e-4)
+                self.assertTensorsClose(dx, x.grad)
 
 
 class TestTopologicalSort(ANSTestCase):
@@ -109,7 +109,7 @@ class TestBackprop(ANSTestCase):
                     var.data.retain_grad()  # to check intermediate gradients even though they don't really matter
                 variables[-1].data.backward(gradient=dout)  # pytorch backprop
                 for var in variables:
-                    torch.testing.assert_allclose(var.grad, var.data.grad, rtol=1e-3, atol=1e-4)
+                    self.assertTensorsClose(var.grad, var.data.grad)
 
 
 def example_1(shape: tuple[int, ...], op: str = '*') -> tuple[ans.autograd.Variable, ...]:

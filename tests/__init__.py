@@ -5,6 +5,8 @@ import textwrap
 from typing import Any, Callable, Optional, Union
 import unittest
 
+import torch
+
 
 class ANSTestCase(unittest.TestCase):
 
@@ -81,3 +83,21 @@ class ANSTestCase(unittest.TestCase):
             for e in ast.walk(ast.parse(inspect.getsource(func)))
         ):
             self.fail(msg=f"Manual loops are not allowed inside {func.__qualname__}")
+
+    def assertTensorsClose(
+            self,
+            actual: torch.Tensor,
+            expected: torch.Tensor,
+            rtol: float = 1e-3,
+            atol: float = 1e-4
+    ) -> None:
+        try:
+            msg = ""
+            torch.testing.assert_close(actual, expected, rtol=rtol, atol=atol)
+        except AssertionError as e:
+            msg = f"{e}\n"
+            if self.params.get('verbose', True):
+                msg += f"\nActual\n{actual}\n"
+                msg += f"\nExpected\n{expected}\n"
+        if msg:
+            self.fail(msg=msg)

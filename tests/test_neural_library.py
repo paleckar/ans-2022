@@ -20,7 +20,7 @@ class TestLinearFunction(ANSTestCase):
 
         z_var = ans.functional.Linear.apply(x_var, w_var, b_var)
         z = torch.nn.functional.linear(x_var.data, w_var.data.t(), b_var.data)
-        torch.testing.assert_allclose(z_var.data, z, rtol=1e-3, atol=1e-4)
+        self.assertTensorsClose(z_var.data, z)
 
     def test_gradcheck(self):
         gradcheck_result = ans.autograd.gradcheck(
@@ -46,7 +46,7 @@ class TestSigmoidFunction(ANSTestCase):
         z_var = ans.functional.Sigmoid.apply(x_var)
         z = torch.sigmoid(x_var.data)
 
-        torch.testing.assert_allclose(z_var.data, z, rtol=1e-3, atol=1e-4)
+        self.assertTensorsClose(z_var.data, z)
 
     def test_gradcheck(self):
         gradcheck_result = ans.autograd.gradcheck(
@@ -73,7 +73,7 @@ class TestSoftmaxCrossEntropyFunction(ANSTestCase):
         l_var = ans.functional.SoftmaxCrossEntropy.apply(x_var, y)
         l = torch.nn.functional.cross_entropy(x_var.data, y)
 
-        torch.testing.assert_allclose(l_var.data, l, rtol=1e-3, atol=1e-4)
+        self.assertTensorsClose(l_var.data, l)
 
     def test_gradcheck(self):
         x_var = randn_var(10, 4)
@@ -103,8 +103,8 @@ class TestLinearModule(ANSTestCase):
             [-0.3311, -0.2064,  0.3039,  0.1578,  0.1714]
         ])
         expected_bias = torch.tensor([0., 0., 0., 0., 0.])
-        torch.testing.assert_allclose(linear.weight.data, expected_weight, rtol=1e-3, atol=1e-4)
-        torch.testing.assert_allclose(linear.bias.data, expected_bias, rtol=1e-3, atol=1e-4)
+        self.assertTensorsClose(linear.weight.data, expected_weight)
+        self.assertTensorsClose(linear.bias.data, expected_bias)
 
     def test_implementaiton(self):
         self.assertCalling(ans.modules.Linear.forward, ['apply'])
@@ -117,7 +117,7 @@ class TestLinearModule(ANSTestCase):
         self.assertIsInstance(z_var, ans.autograd.Variable)
 
         z = torch.nn.functional.linear(x_var.data, linear.weight.data.t(), linear.bias.data)
-        torch.testing.assert_allclose(z_var.data, z, rtol=1e-3, atol=1e-4)
+        self.assertTensorsClose(z_var.data, z)
 
 
 class TestSigmoidModule(ANSTestCase):
@@ -133,7 +133,7 @@ class TestSigmoidModule(ANSTestCase):
         self.assertIsInstance(z_var, ans.autograd.Variable)
 
         z = torch.sigmoid(x_var.data)
-        torch.testing.assert_allclose(z_var.data, z, rtol=1e-3, atol=1e-4)
+        self.assertTensorsClose(z_var.data, z)
 
 
 class TestSoftmaxCrossEntropyModule(ANSTestCase):
@@ -150,7 +150,7 @@ class TestSoftmaxCrossEntropyModule(ANSTestCase):
         self.assertIsInstance(z_var, ans.autograd.Variable)
 
         z = torch.nn.functional.cross_entropy(x_var.data, y)
-        torch.testing.assert_allclose(z_var.data, z, rtol=1e-3, atol=1e-4)
+        self.assertTensorsClose(z_var.data, z)
 
 
 def randn_var(*shape: int, name: str = None, std: float = 1., dtype=torch.float64) -> ans.autograd.Variable:
