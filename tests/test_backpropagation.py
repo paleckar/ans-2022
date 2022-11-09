@@ -55,7 +55,7 @@ class TestPow(ANSTestCase):
         for shape in self.shapes:
             for power in self.powers:
                 # forward pass
-                x = torch.randn(shape, requires_grad=True)
+                x = torch.rand(shape, requires_grad=True)
                 y = x ** power
                 x_var = ans.autograd.Variable(x)
                 y_var = x_var ** power
