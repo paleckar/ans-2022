@@ -125,7 +125,7 @@ class TestAccuracy(ANSTestCase):
         self.assertNotCalling(self.params['accuracy_fn'], ['accuracy'])
         self.assertNoLoops(self.params['accuracy_fn'])
 
-    def test_cross_entropy(self):
+    def test_accuracy(self):
         ans.utils.seed_everything(0)
         probs = torch.rand(19, 5)
         targets = torch.randint(0, 5, (19, 1)).squeeze()

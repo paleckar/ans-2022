@@ -184,6 +184,7 @@ class Variable:
 def numeric_gradient(
         func: Callable[[torch.Tensor], torch.Tensor],
         input: torch.Tensor,
+        dout: torch.Tensor,
         eps: Optional[float] = None
 ) -> torch.Tensor:
     if eps is None:
@@ -200,7 +201,7 @@ def numeric_gradient(
         flat[i] = inp_i - eps
         neg = func(input)
         flat[i] = inp_i  # restore
-        grad[i] = torch.sum((pos - neg)) / (2. * eps)
+        grad[i] = torch.sum((pos - neg) * dout) / (2. * eps)
     return grad.reshape(input.shape)
 
 
@@ -208,6 +209,7 @@ def gradcheck(
         func: Callable[[Any, ...], Variable],
         inputs: tuple[Union[torch.Tensor, Variable], ...],
         params: Optional[dict[str, Any]] = None,
+        dout: Optional[torch.Tensor] = None,
         eps: Optional[float] = None,
         rtol: float = 1e-3,
         atol: float = 1e-5,
@@ -220,7 +222,9 @@ def gradcheck(
     output = func(*inputs, **params)
     for input in inputs:
         input.grad = None
-    output.backprop()
+    if dout is None:
+        dout = torch.randn_like(output.data)
+    output.backprop(dout=dout)
     grads_ana = [i.grad for i in inputs if isinstance(i, Variable)]
 
     # Numeric gradients
@@ -228,9 +232,9 @@ def gradcheck(
     for i, input in enumerate(inputs):
         if not isinstance(input, Variable):
             continue
-        grad_num = numeric_gradient(lambda _: func(*inputs, **params).data, input.data, eps=eps)
+        grad_num = numeric_gradient(lambda _: func(*inputs, **params).data, input.data, dout, eps=eps)
         abs_err = torch.abs(grads_ana[i] - grad_num)
-        rel_err = abs_err / torch.abs(grad_num)
+        rel_err = abs_err / torch.abs(grad_num + 1e-6)
         allowed = atol + rtol * torch.abs(grad_num)
         passes = torch.all(abs_err < allowed)  # torch.allclose
         ok = ok and passes.item()

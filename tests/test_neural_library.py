@@ -153,5 +153,15 @@ class TestSoftmaxCrossEntropyModule(ANSTestCase):
         self.assertTensorsClose(z_var.data, z)
 
 
-def randn_var(*shape: int, name: str = None, std: float = 1., dtype=torch.float64) -> ans.autograd.Variable:
-    return ans.autograd.Variable(std * torch.randn(*shape, dtype=dtype, requires_grad=True), name=name)
+def randn_var(
+        *shape: int,
+        name: str = None,
+        mean: float = 0.,
+        std: float = 1.,
+        dtype=torch.float64,
+        requires_grad: bool = True
+) -> ans.autograd.Variable:
+    tensor = mean + std * torch.randn(*shape, dtype=dtype)
+    if requires_grad:
+        tensor = tensor.requires_grad_()
+    return ans.autograd.Variable(tensor, name=name)
