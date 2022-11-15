@@ -1,7 +1,7 @@
 import torch
 
 import ans
-from tests import ANSTestCase
+from tests import ANSTestCase, randn_var
 
 
 class TestLinearFunction(ANSTestCase):
@@ -151,17 +151,3 @@ class TestSoftmaxCrossEntropyModule(ANSTestCase):
 
         z = torch.nn.functional.cross_entropy(x_var.data, y)
         self.assertTensorsClose(z_var.data, z)
-
-
-def randn_var(
-        *shape: int,
-        name: str = None,
-        mean: float = 0.,
-        std: float = 1.,
-        dtype=torch.float64,
-        requires_grad: bool = True
-) -> ans.autograd.Variable:
-    tensor = mean + std * torch.randn(*shape, dtype=dtype)
-    if requires_grad:
-        tensor = tensor.requires_grad_()
-    return ans.autograd.Variable(tensor, name=name)

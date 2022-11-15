@@ -2,8 +2,8 @@ import torch
 
 import ans
 from tests import ANSTestCase
-from tests.test_linear_classification import TestAccuracy
-from tests.test_neural_library import randn_var
+from tests.test_linear_classification import TestAccuracy  # used in notebook via this module
+from tests import randn_var
 
 
 class TestSGD(ANSTestCase):
@@ -185,7 +185,7 @@ class TestReLU(ANSTestCase):
     def test_gradcheck(self):
         gradcheck_result = ans.autograd.gradcheck(
             ans.functional.ReLU.apply,
-            (randn_var(10, 4, std=10., requires_grad=False),),
+            (randn_var(10, 4, std=10.),),
             verbose=False
         )
         self.assertTrue(gradcheck_result)
@@ -198,10 +198,10 @@ class TestBatchNorm1d(ANSTestCase):
         self.assertCalling(ans.modules.Sigmoid.forward, ['apply'])
 
     @staticmethod
-    def random_inputs(n: int, d: int, requires_grad: bool = True, affine: bool = True) -> tuple[tuple, dict]:
-        x_var = randn_var(n, d, mean=torch.randn(1).item(), std=torch.rand(1).item(), requires_grad=requires_grad)
-        gamma = randn_var(d, requires_grad=requires_grad) if affine else None
-        beta = randn_var(d, requires_grad=requires_grad) if affine else None
+    def random_inputs(n: int, d: int, affine: bool = True) -> tuple[tuple, dict]:
+        x_var = randn_var(n, d, mean=torch.randn(1).item(), std=torch.rand(1).item())
+        gamma = randn_var(d) if affine else None
+        beta = randn_var(d) if affine else None
         params = {
             'running_mean': torch.randn(d, dtype=x_var.data.dtype),
             'running_var': torch.rand(d, dtype=x_var.data.dtype),
@@ -266,7 +266,7 @@ class TestBatchNorm1d(ANSTestCase):
 
     def test_gradcheck(self):
         for training in [True, False]:
-            (x_var, gamma, beta), params = TestBatchNorm1d.random_inputs(11, 6, requires_grad=False)
+            (x_var, gamma, beta), params = TestBatchNorm1d.random_inputs(11, 6)
             gradcheck_result = ans.autograd.gradcheck(
                 ans.functional.BatchNorm1d.apply,
                 (x_var, gamma, beta),
@@ -316,7 +316,7 @@ class TestDropout(ANSTestCase):
         for training in [True, False]:
             gradcheck_result = ans.autograd.gradcheck(
                 ans.functional.Dropout.apply,
-                (randn_var(10, 4, requires_grad=False),),
+                (randn_var(10, 4),),
                 params=dict(training=training, seed=torch.randint(1000, (1,)).item()),
                 verbose=False
             )
