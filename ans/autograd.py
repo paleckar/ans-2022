@@ -161,13 +161,11 @@ class Variable:
             """
             func_uid = str(id(node)) + '.grad_fn'
             if hasattr(node.grad_fn, 'name'):
-                func_label = node.grad_fn.name.removesuffix('.backward')
+                func_label = node.grad_fn.name.removesuffix('.backward')  # coming from Function.apply
             else:
-                func_label = re.search('__(\w+)__', node.grad_fn.__qualname__).group(1)
+                func_label = re.search('__(\w+)__', node.grad_fn.__qualname__).group(1)  # coming from Variable.__*__
             return func_uid, func_label
 
-        if show_data:
-            torch.set_printoptions(profile='short', threshold=6, edgeitems=1)
         dot = graphviz.Digraph(graph_attr={'rankdir': 'LR'})
 
         ########################################
@@ -221,7 +219,8 @@ def gradcheck(
     # Analytic gradients
     output = func(*inputs, **params)
     for input in inputs:
-        input.grad = None
+        if isinstance(input, Variable):
+            input.grad = None
     if dout is None:
         dout = torch.randn_like(output.data)
     output.backprop(dout=dout)
@@ -243,7 +242,6 @@ def gradcheck(
             if passes:
                 print(f"d{input_name} ok: rel_err={rel_err.max().item():.3e}, abs_err={abs_err.max().item():.3e}")
             else:
-                torch.set_printoptions(threshold=40, linewidth=160, sci_mode=False)
                 print(f"\033[31md{input_name} FAIL: "  # begin red color
                       f"rel_err={rel_err.max().item():.3e}, abs_err={abs_err.max().item():.3e}\n")
                 print('Analytic gradient: ')
@@ -253,6 +251,5 @@ def gradcheck(
                 print('Relative error: ')
                 print(rel_err)
                 print('\033[30m')  # end red color
-                torch.set_printoptions(profile='default')
 
     return ok
