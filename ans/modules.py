@@ -51,6 +51,9 @@ class Module:
     def parameters(self) -> list[Variable]:
         return [p for n, p in self.named_parameters()]
 
+    def num_params(self) -> int:
+        return sum(p.data.numel() for p in self.parameters())
+
     def to(self, dtype: Optional[torch.dtype] = None, device: Optional[str] = None) -> 'Module':
         def to(obj: Any) -> None:
             if isinstance(obj, torch.Tensor):
@@ -225,6 +228,90 @@ class BatchNorm1d(Module):
 
         # ENDTODO
         ########################################
+
+    def forward(self, x: Variable) -> Variable:
+        ########################################
+        # TODO: implement
+
+        raise NotImplementedError
+
+        # ENDTODO
+        ########################################
+
+
+class BatchNorm2d(BatchNorm1d):
+
+    def forward(self, x: Variable) -> Variable:
+        ########################################
+        # TODO: implement
+
+        raise NotImplementedError
+
+        # ENDTODO
+        ########################################
+
+
+class Conv2d(Module):
+
+    def __init__(
+            self,
+            in_channels: int,
+            out_channels: int,
+            kernel_size: int,
+            stride: int = 1,
+            padding: int = 0,
+            dilation: int = 1,
+            groups: int = 1,
+            bias: bool = True
+    ) -> None:
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.dilation = dilation
+        self.groups = groups
+
+        ########################################
+        # TODO: initialize weight and bias
+        # if bias is True, then bias should be zeros, otherwise set to None
+
+        self.weight = ...
+        self.bias = ...
+
+        # ENDTODO
+        ########################################
+
+    def forward(self, x: Variable) -> Variable:
+        ########################################
+        # TODO: implement
+
+        raise NotImplementedError
+
+        # ENDTODO
+        ########################################
+
+
+class MaxPool2d(Module):
+
+    def __init__(self, window_size: int) -> None:
+        super().__init__()
+
+        self.window_size = window_size
+
+    def forward(self, x: Variable) -> Variable:
+        ########################################
+        # TODO: implement
+
+        raise NotImplementedError
+
+        # ENDTODO
+        ########################################
+
+
+class Flatten(Module):
 
     def forward(self, x: Variable) -> Variable:
         ########################################
